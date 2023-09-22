@@ -53,12 +53,21 @@ namespace Core.DomainServices.Services.Impl
 
             // Before we implement the logic with respect to caretakers, first find out who all possible
             // caretakers are for this game.
-            newGame.Players = _playerRepository.GetPlayers().ToList().OrderBy(p => p.Games.Count).Take(12).ToList();
+            newGame.Players = _playerRepository.GetPlayers()
+                .ToList()
+                .OrderBy(p => p.Games.Count) // <-- spelers met minste games eerst kiezen
+                .Take(12)
+                .ToList();
+            if (newGame.Players.Count < 12)
+            {
+                throw new ValidationException("Not enough players available for this game.");
+            }
+
             List<CareTaker> gamePossibleCareTakers = new List<CareTaker>();
             newGame.Players.ToList().ForEach(p => gamePossibleCareTakers.AddRange(p.CareTakers.ToList()));
 
             // Note: first assign drivers, then the laundry duty because selected as a driver saves you
-            // from the laundry duty, even you were selected manyually (laundryDutyId).
+            // from the laundry duty, even you were selected manually (laundryDutyId).
             AssignDrivers(newGame, gamePossibleCareTakers);
 
             AssignLaundryDuty(newGame, laundryDutyId, gamePossibleCareTakers);
